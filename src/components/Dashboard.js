@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Loading from "components/Loading.js"
 import Panel from "components/Panel.js"
 import axios from "axios"
+import { setInterview } from "helpers/reducers";
 import {
   getTotalInterviews,
   getLeastPopularTimeSlot,
@@ -57,11 +58,26 @@ class Dashboard extends Component {
         interviewers: interviewers.data
       });
     });
+    this.socket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
+    this.socket.onmessage = event => {
+      const data = JSON.parse(event.data);
+    
+      if (typeof data === "object" && data.type === "SET_INTERVIEW") {
+        this.setState(previousState =>
+          setInterview(previousState, data.id, data.interview)
+        );
+      }
+    };
 
     if (focused) {
       this.setState({ focused });
     }
   }
+
+  componentWillUnmount() {
+    this.socket.close();
+  }
+  
 
   componentDidUpdate(previousProps, previousState) {
     if (previousState.focused !== this.state.focused) {
